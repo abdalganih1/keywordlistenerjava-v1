@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".activity.SettingsActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="إعدادات الكلمات والأرقام"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- قسم إضافة كلمة مفتاحية جديدة -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="إضافة كلمة مفتاحية جديدة:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/et_new_keyword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="نص الكلمة المفتاحية (مثلاً: إنقاذ)"
+                android:inputType="text"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/rounded_edittext_background"/>
+
+            <Button
+                android:id="@+id/btn_add_keyword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="إضافة الكلمة"
+                android:layout_gravity="center_horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp"
+                android:layout_marginBottom="24dp"/>
+
+            <Button
+                android:id="@+id/btn_test_keyword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="اختبار الكلمة المفتاحية"
+                android:layout_gravity="center_horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp"
+                android:layout_marginBottom="24dp"/>
+
+
+            <!-- قسم إضافة رقم طوارئ جديد -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="إضافة رقم طوارئ جديد:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/et_new_phone_number"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="رقم الهاتف (مثلاً: 09XXXXXXXX)"
+                android:inputType="phone"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/rounded_edittext_background"/>
+
+            <EditText
+                android:id="@+id/et_new_number_desc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="وصف الرقم (مثلاً: أخي أحمد)"
+                android:inputType="text"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/rounded_edittext_background"/>
+
+            <Button
+                android:id="@+id/btn_add_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="إضافة الرقم"
+                android:layout_gravity="center_horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp"
+                android:layout_marginBottom="24dp"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- قسم ربط الكلمات والأرقام -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ربط كلمة مفتاحية برقم طوارئ:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <Spinner
+                android:id="@+id/spinner_keywords"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:spinnerMode="dropdown"
+                android:padding="8dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/rounded_edittext_background"/>
+
+            <Spinner
+                android:id="@+id/spinner_numbers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:spinnerMode="dropdown"
+                android:padding="8dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/rounded_edittext_background"/>
+
+            <Button
+                android:id="@+id/btn_link_keyword_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ربط"
+                android:layout_gravity="center_horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp"
+                android:layout_marginBottom="24dp"/>
+
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- قسم إدارة الروابط -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الكلمات والأرقام المرتبطة (الخاصة بك):"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <ProgressBar
+                android:id="@+id/progress_bar_settings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_links"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="vertical"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

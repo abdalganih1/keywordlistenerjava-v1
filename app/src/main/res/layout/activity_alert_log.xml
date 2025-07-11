@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".activity.AlertLogActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="سجل البلاغات"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- ProgressBar لإظهاره أثناء تحميل البيانات -->
+    <ProgressBar
+        android:id="@+id/progress_bar_alert_log"
+        android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:visibility="gone"
+    tools:visibility="visible"/>
+
+    <!-- RecyclerView لعرض قائمة البلاغات -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_alerts"    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:scrollbars="vertical"
+    tools:listitem="@layout/list_item_alert"/>
+
+</LinearLayout>

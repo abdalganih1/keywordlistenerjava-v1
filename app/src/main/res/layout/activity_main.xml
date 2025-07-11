@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="24dp"
+    tools:context=".activity.MainActivity">
+
+    <TextView
+        android:id="@+id/tv_welcome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="مرحبًا أيها المستخدم!"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- قسم الإحصائيات (مخفي عن المستخدم العادي، لكن هنا للعرض) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/rounded_card_background"
+        android:padding="16dp"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="إحصائيات البلاغات:"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/tv_total_alerts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="عدد البلاغات الإجمالي: 0"
+            android:textSize="16sp"/>
+
+        <TextView
+            android:id="@+id/tv_real_alerts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="عدد البلاغات الحقيقية: 0"
+            android:textSize="16sp"
+            android:textColor="@android:color/holo_green_dark"/>
+
+        <TextView
+            android:id="@+id/tv_false_alerts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="عدد البلاغات الكاذبة: 0"
+            android:textSize="16sp"
+            android:textColor="@android:color/holo_red_dark"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btn_start_porcupine"     android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="تشغيل الاستماع (يصدر صوتًا)"
+        android:padding="12dp"
+    android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btn_stop_porcupine"
+        android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="إيقاف الاستماع"
+    android:padding="12dp"
+    android:layout_marginBottom="24dp"/>
+
+    <TextView
+        android:id="@+id/tv_recognized_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="" />
+
+    <Button
+        android:id="@+id/btn_view_log"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="عرض سجل البلاغات"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btn_settings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="الإعدادات (الكلمات والأرقام)"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btn_logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="تسجيل الخروج"
+        android:padding="12dp"
+        android:backgroundTint="@android:color/holo_red_light"/>
+
+</LinearLayout>

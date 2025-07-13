@@ -10,38 +10,49 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="إعدادات الكلمات والأرقام"
+        android:text="الإعدادات المتقدمة"
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_marginBottom="24dp"/>
 
+    <ProgressBar
+        android:id="@+id/progress_bar_settings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- قسم إضافة كلمة مفتاحية جديدة -->
+            <!-- قسم إدارة الكلمات المفتاحية -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="إضافة كلمة مفتاحية جديدة:"
+                android:text="إدارة الكلمات المفتاحية المخصصة:"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_keywords"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
                 android:layout_marginBottom="8dp"/>
 
             <EditText
                 android:id="@+id/et_new_keyword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="نص الكلمة المفتاحية (مثلاً: إنقاذ)"
-                android:inputType="text"
+                android:hint="أضف كلمة جديدة هنا"
                 android:padding="12dp"
-                android:layout_marginBottom="12dp"
                 android:background="@drawable/rounded_edittext_background"/>
 
             <Button
@@ -49,29 +60,25 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="إضافة الكلمة"
-                android:layout_gravity="center_horizontal"
-                android:paddingLeft="24dp"
-                android:paddingRight="24dp"
-                android:layout_marginBottom="24dp"/>
-
-            <Button
-                android:id="@+id/btn_test_keyword"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="اختبار الكلمة المفتاحية"
-                android:layout_gravity="center_horizontal"
-                android:paddingLeft="24dp"
-                android:paddingRight="24dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="8dp"
                 android:layout_marginBottom="24dp"/>
 
 
-            <!-- قسم إضافة رقم طوارئ جديد -->
+            <!-- قسم إدارة أرقام الطوارئ -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="إضافة رقم طوارئ جديد:"
+                android:text="إدارة أرقام الطوارئ المخصصة:"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_numbers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
                 android:layout_marginBottom="8dp"/>
 
             <EditText
@@ -81,7 +88,6 @@
                 android:hint="رقم الهاتف (مثلاً: 09XXXXXXXX)"
                 android:inputType="phone"
                 android:padding="12dp"
-                android:layout_marginBottom="12dp"
                 android:background="@drawable/rounded_edittext_background"/>
 
             <EditText
@@ -90,8 +96,8 @@
                 android:layout_height="wrap_content"
                 android:hint="وصف الرقم (مثلاً: أخي أحمد)"
                 android:inputType="text"
+                android:layout_marginTop="8dp"
                 android:padding="12dp"
-                android:layout_marginBottom="12dp"
                 android:background="@drawable/rounded_edittext_background"/>
 
             <Button
@@ -99,23 +105,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="إضافة الرقم"
-                android:layout_gravity="center_horizontal"
-                android:paddingLeft="24dp"
-                android:paddingRight="24dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="8dp"
                 android:layout_marginBottom="24dp"/>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"/>
 
             <!-- قسم ربط الكلمات والأرقام -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ربط كلمة مفتاحية برقم طوارئ:"
+                android:text="ربط كلمة برقم:"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"/>
@@ -149,34 +148,20 @@
                 android:layout_marginBottom="24dp"/>
 
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"/>
-
-            <!-- قسم إدارة الروابط -->
+            <!-- قسم إدارة الروابط الحالية -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="الكلمات والأرقام المرتبطة (الخاصة بك):"
+                android:text="الروابط الحالية:"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"/>
-
-            <ProgressBar
-                android:id="@+id/progress_bar_settings"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:visibility="gone"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view_links"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:scrollbars="vertical"/>
+                android:nestedScrollingEnabled="false"/>
 
         </LinearLayout>
     </ScrollView>

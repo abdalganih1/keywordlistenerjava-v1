@@ -1,9 +1,11 @@
 package com.example.keywordlistenerjava.service;
 
+// *** استيرادات SpeechRecognizer المدمج ***
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 
+// *** استيرادات Android Framework ***
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Notification;
@@ -24,20 +26,22 @@ import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
 
+// *** استيرادات AndroidX ***
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.google.android.gms.location.FusedLocationProviderClient; // لم يعد يستخدم مباشرة هنا، ولكن مفيد في LocationHelper
-import com.google.android.gms.location.LocationServices; // لم يعد يستخدم مباشرة هنا
-import com.google.android.gms.location.Priority; // لم يعد يستخدم مباشرة هنا
-import com.google.android.gms.tasks.CancellationTokenSource; // لم يعد يستخدم مباشرة هنا
+// *** استيرادات Google Play Services (للموقع) ***
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+// *** استيرادات من كود المشروع ***
 import com.example.keywordlistenerjava.R;
 import com.example.keywordlistenerjava.activity.MainActivity;
 import com.example.keywordlistenerjava.db.dao.AlertLogDao;
@@ -51,6 +55,14 @@ import com.example.keywordlistenerjava.db.entity.User;
 import com.example.keywordlistenerjava.util.LocationHelper;
 import com.example.keywordlistenerjava.util.SharedPreferencesHelper;
 
+// *** استيرادات Java قياسية لـ HTTP POST ***
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -60,32 +72,39 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class SpeechRecognizerService extends Service {
 
+    // --- ثوابت الخدمة ---
     private static final String TAG = "SpeechRecognizerService";
     private static final String NOTIFICATION_CHANNEL_ID = "SpeechRecognizerServiceChannel";
     private static final int NOTIFICATION_ID = 1;
+    // URL لملف PHP الخاص بك على localhost
+    private static final String PHP_RECEIVER_URL = "http://192.168.43.121/security_app/receive_alert.php";
 
-    private static final String TARGET_PHONE_NUMBER_DEFAULT = "0000000000";
-
+    // --- متغيرات SpeechRecognizer ---
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
     private boolean isListening = false;
+    private boolean isActionInProgress = false; // لمنع تفعيل بلاغ جديد أثناء معالجة بلاغ قائم
 
+    // --- متغيرات الخدمة الأخرى ---
     private Handler mainThreadHandler;
     private ExecutorService executorService;
 
+    // DAOs
     private AlertLogDao alertLogDao;
     private KeywordNumberLinkDao keywordNumberLinkDao;
     private UserDao userDao;
     private KeywordDao keywordDao;
 
+    // Helpers
     private SharedPreferencesHelper prefsHelper;
     private LocationHelper locationHelper;
 
+    // الكلمات المفتاحية النشطة للمستخدم
     private List<Keyword> activeKeywords;
-
 
     // --- 1. دورة حياة الخدمة ---
 
@@ -105,7 +124,6 @@ public class SpeechRecognizerService extends Service {
         locationHelper = new LocationHelper(this);
 
         createNotificationChannel();
-
         setupSpeechRecognizer();
 
         Log.i(TAG, "onCreate: SpeechRecognizer Service created.");
@@ -119,12 +137,14 @@ public class SpeechRecognizerService extends Service {
         startForeground(NOTIFICATION_ID, notification);
         Log.d(TAG, "onStartCommand: Service started in foreground.");
 
-        loadActiveKeywordsForUser(); // جلب الكلمات المفتاحية
+        loadActiveKeywordsForUser();
 
         if (speechRecognizer != null) {
             startListeningLoop();
         } else {
             Log.e(TAG, "onStartCommand: SpeechRecognizer not initialized. Cannot start listening.");
+            Toast.makeText(getApplicationContext(), "خطأ: خدمة التعرف على الصوت غير متاحة.", Toast.LENGTH_LONG).show();
+            stopSelf();
         }
 
         return START_STICKY;
@@ -144,10 +164,8 @@ public class SpeechRecognizerService extends Service {
             });
         }
 
-        if (executorService != null && !executorService.isShutdown()) {
-            executorService.shutdownNow();
-            Log.i(TAG, "onDestroy: ExecutorService shutdown.");
-        }
+        // لا تقم بإغلاق executorService هنا لمنع RejectedExecutionException
+        // النظام سيقوم بتحرير الموارد عند إنهاء العملية.
 
         stopForeground(true);
         Log.i(TAG, "onDestroy: SpeechRecognizer Service destroyed.");
@@ -161,14 +179,14 @@ public class SpeechRecognizerService extends Service {
     }
 
     private void loadActiveKeywordsForUser() {
-        int currentUserId = prefsHelper.getLoggedInUserId();
+        final int currentUserId = prefsHelper.getLoggedInUserId();
         if (currentUserId == -1) {
             Log.e(TAG, "loadActiveKeywordsForUser: No user logged in, cannot load active keywords.");
             activeKeywords = new ArrayList<>();
             return;
         }
 
-        executorService.execute(() -> {
+        executeTask(() -> {
             keywordDao.open();
             activeKeywords = keywordDao.getAllKeywordsForUser(currentUserId);
             keywordDao.close();
@@ -201,18 +219,12 @@ public class SpeechRecognizerService extends Service {
         String languagePref = "ar";
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, languagePref);
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, languagePref);
-        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true); // للحصول على نتائج جزئية
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
 
-        // *** تحسينات لأوقات الصمت، لمنع التوقف السريع جداً ***
-        // هذه القيم بالمللي ثانية
-        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L); // انتظر 1.5 ثانية على الأقل من الكلام
-        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L); // بعد الكلام، انتظر 2 ثانية صمت قبل التوقف
-        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L); // أثناء الكلام، انتظر 3 ثواني صمت قبل التوقف
-
-        // محاولة إضافية لضبط سلوك التعرف (قد لا تعمل على كل الأجهزة)
-        // speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
-        // speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true); // تفضيل الوضع بدون انترنت
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L);
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L);
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L);
 
         Log.d(TAG, "setupSpeechIntent: Intent configured for language: " + languagePref);
     }
@@ -220,7 +232,7 @@ public class SpeechRecognizerService extends Service {
     // --- 3. التحكم في عملية الاستماع ---
 
     private void startListeningLoop() {
-        if (!isListening && speechRecognizer != null) {
+        if (!isListening && !isActionInProgress && speechRecognizer != null) {
             mainThreadHandler.post(() -> {
                 try {
                     isListening = true;
@@ -238,7 +250,7 @@ public class SpeechRecognizerService extends Service {
                 }
             });
         } else {
-            Log.w(TAG, "startListeningLoop: Already listening or recognizer is null.");
+            Log.w(TAG, "startListeningLoop: Not starting. isListening=" + isListening + ", isActionInProgress=" + isActionInProgress);
         }
     }
 
@@ -291,8 +303,7 @@ public class SpeechRecognizerService extends Service {
         public void onEndOfSpeech() {
             Log.d(TAG, "Listener: onEndOfSpeech");
             isListening = false;
-            // أعد التشغيل بعد فترة صمت
-            restartListeningAfterDelay(500); // زيادة التأخير قليلاً
+            restartListeningAfterDelay(500);
         }
 
         @Override
@@ -312,13 +323,8 @@ public class SpeechRecognizerService extends Service {
                 String recognizedText = matches.get(0);
                 Log.i(TAG, "Listener: Recognized text = '" + recognizedText + "'");
 
-                // *** إرسال النص المكتشف إلى MainActivity ***
-                Intent intent = new Intent("com.example.keywordlistenerjava.RECOGNIZED_TEXT");
-                intent.putExtra("recognized_text", recognizedText);
-                LocalBroadcastManager.getInstance(SpeechRecognizerService.this).sendBroadcast(intent);
-                // ********************************************
+                sendBroadcastToActivity("RECOGNIZED_TEXT", recognizedText);
 
-                // *** فحص النص المكتشف مقابل جميع الكلمات المفتاحية النشطة ***
                 String lowerCaseRecognizedText = recognizedText.trim().toLowerCase(Locale.ROOT);
                 String detectedKeyword = null;
 
@@ -326,23 +332,22 @@ public class SpeechRecognizerService extends Service {
                     for (Keyword kw : activeKeywords) {
                         String lowerCaseKeyword = kw.getKeywordText().toLowerCase(Locale.ROOT);
                         if (lowerCaseRecognizedText.contains(lowerCaseKeyword)) {
-                            detectedKeyword = kw.getKeywordText(); // نجد الكلمة التي تم التعرف عليها
-                            break; // نكتفي بأول كلمة مطابقة
+                            detectedKeyword = kw.getKeywordText();
+                            break;
                         }
                     }
                 }
 
-                if (detectedKeyword != null) {
+                if (detectedKeyword != null && !isActionInProgress) {
                     Log.i(TAG, "Listener: >>> DETECTED KEYWORD: '" + detectedKeyword + "' <<<");
                     onKeywordDetectedAction(detectedKeyword);
-                    // لا تعيد التشغيل فوراً هنا، onKeywordDetectedAction ستنتهي وسيعاود الاستماع
                 } else {
-                    Log.d(TAG, "Listener: No configured keyword found in recognized text.");
-                    restartListeningAfterDelay(100); // إذا لم يتم العثور على الكلمة، أعد التشغيل
+                    Log.d(TAG, "Listener: No configured keyword found or action in progress.");
+                    restartListeningAfterDelay(100);
                 }
             } else {
                 Log.d(TAG, "Listener: No recognition results found.");
-                restartListeningAfterDelay(100); // إذا لم يكن هناك نتائج، أعد التشغيل
+                restartListeningAfterDelay(100);
             }
         }
 
@@ -352,10 +357,7 @@ public class SpeechRecognizerService extends Service {
             if (partialMatches != null && !partialMatches.isEmpty()) {
                 String partialText = partialMatches.get(0);
                 Log.d(TAG, "Listener: Partial Results = '" + partialText + "'");
-                // *** إرسال النص المكتشف جزئياً إلى MainActivity (يمكن تفعيله إذا لزم الأمر) ***
-                Intent intent = new Intent("com.example.keywordlistenerjava.RECOGNIZED_TEXT_PARTIAL");
-                intent.putExtra("recognized_text", "(جزئي) " + partialText);
-                LocalBroadcastManager.getInstance(SpeechRecognizerService.this).sendBroadcast(intent);
+                sendBroadcastToActivity("RECOGNIZED_TEXT_PARTIAL", "(جزئي) " + partialText);
             }
         }
 
@@ -387,16 +389,12 @@ public class SpeechRecognizerService extends Service {
                 restartListeningAfterDelay(5000);
                 break;
             case SpeechRecognizer.ERROR_NO_MATCH:
-                // No Match: لم يتم التعرف على الكلام
-                shouldRestart = true; // أعد التشغيل
-                break;
             case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
-                // Speech Timeout: لم يتم اكتشاف كلام في الوقت المحدد (مهم للتوقف عند عدم وجود صوت)
-                shouldRestart = true; // أعد التشغيل
+                shouldRestart = true;
                 break;
             case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
                 Log.w(TAG, "Recognizer is busy, retrying after a short delay.");
-                restartListeningAfterDelay(1000); // تأخير أكبر
+                restartListeningAfterDelay(1000);
                 break;
             case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
                 Log.e(TAG, "Insufficient permissions detected. Stopping service.");
@@ -467,6 +465,8 @@ public class SpeechRecognizerService extends Service {
     // --- 6. الإجراء عند اكتشاف الكلمة المفتاحية ---
     private void onKeywordDetectedAction(String keyword_used) {
         Log.i(TAG, "onKeywordDetectedAction: Action triggered for keyword: " + keyword_used);
+        isActionInProgress = true; // منع بلاغات جديدة
+        stopListening(); // أوقف الاستماع مؤقتًا
 
         mainThreadHandler.post(() ->
                 Toast.makeText(getApplicationContext(), "تم اكتشاف الكلمة: " + keyword_used, Toast.LENGTH_SHORT).show());
@@ -476,10 +476,11 @@ public class SpeechRecognizerService extends Service {
         if (currentUserId == -1) {
             Log.e(TAG, "onKeywordDetectedAction: No user logged in. Cannot process alert.");
             mainThreadHandler.post(() -> updateNotification("خطأ: لا يوجد مستخدم مسجل الدخول."));
+            resumeListeningAfterAction(); // استئناف الاستماع
             return;
         }
 
-        executorService.execute(() -> {
+        executeTask(() -> {
             final User[] userHolder = {null};
             final List<EmergencyNumber> recipientNumbersHolder = new ArrayList<>();
             final String finalDetectedKeyword = keyword_used;
@@ -491,6 +492,7 @@ public class SpeechRecognizerService extends Service {
             if (userHolder[0] == null) {
                 Log.e(TAG, "onKeywordDetectedAction: Current user not found in DB! ID: " + currentUserId);
                 mainThreadHandler.post(() -> updateNotification("خطأ: بيانات المستخدم غير موجودة."));
+                resumeListeningAfterAction(); // استئناف الاستماع
                 return;
             }
 
@@ -501,81 +503,72 @@ public class SpeechRecognizerService extends Service {
             if (recipientNumbersHolder.isEmpty()) {
                 Log.w(TAG, "onKeywordDetectedAction: No emergency numbers linked for user " + currentUserId + " with keyword " + finalDetectedKeyword);
                 mainThreadHandler.post(() -> updateNotification("لا توجد أرقام طوارئ مرتبطة بالكلمة المفتاحية."));
+                resumeListeningAfterAction(); // استئناف الاستماع
                 return;
             }
 
             locationHelper.getCurrentLocation()
-                    .addOnSuccessListener(new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-                            String mapLink = "غير متاح";
-                            double lat = 0.0;
-                            double lon = 0.0;
-                            if (location != null) {
-                                lat = location.getLatitude();
-                                lon = location.getLongitude();
-                                // *** إنشاء الرابط غير المرمز أولاً ***
-                                String rawMapLink = LocationHelper.generateGoogleMapsLink(lat, lon);
-                                Log.d(TAG, "Raw map link: " + rawMapLink);
+                    .addOnSuccessListener(location -> {
+                        String mapLink = "غير متاح";
+                        double lat = 0.0;
+                        double lon = 0.0;
+                        String locationStringForPhp = "غير متاح";
 
-                                // *** ترميز الرابط قبل إرساله (هذا هو الحل) ***
-                                try {
-                                    // نستخدم URLEncoder.encode لترميز الرابط
-                                    // من المهم تحديد ترميز UTF-8
-                                    mapLink = URLEncoder.encode(rawMapLink, StandardCharsets.UTF_8.toString());
-                                    // بعض تطبيقات الرسائل قد تحتاج إلى ترميز الجزء الذي يحتوي على الفاصلة فقط
-                                    // الطريقة الأكثر موثوقية هي ترميز الرابط كاملاً أو الجزء الحساس منه
-                                    // سنستخدم طريقة ترميز الرابط كاملاً، ولكن سنستبدل بعض الأحرف التي لا يجب ترميزها
-                                    mapLink = "http://maps.google.com/maps?q=" + lat + "%2C" + lon; // طريقة أكثر أمانًا
-                                    Log.d(TAG, "Encoded map link for SMS: " + mapLink);
-                                } catch (Exception e) {
-                                    Log.e(TAG, "Failed to encode map link, using raw link.", e);
-                                    mapLink = rawMapLink; // استخدام الرابط غير المرمز في حالة فشل الترميز
-                                }
-
-                            } else {
-                                Log.w(TAG, "Location is null for the alert.");
-                            }
-
-                            // *** استخدام mapLink المرمز في الرسالة النهائية ***
-                            final String finalMapLink = mapLink;
-                            final String messageText = String.format(Locale.getDefault(),
-                                    "لقد استعمل %s %s الكلمة المفتاحية (%s) في الموقع الجغرافي على الخريطة (%s)",
-                                    userHolder[0].getFirstName(), userHolder[0].getLastName(), finalDetectedKeyword, finalMapLink);
-
-                            // ... (باقي الكود لإرسال الرسالة وتسجيل البلاغ) ...
-                            for (EmergencyNumber number : recipientNumbersHolder) {
-                                sendActionMessage(number.getPhoneNumber(), messageText);
-                            }
-
-                            AlertLog newAlert = new AlertLog();
-                            newAlert.setUserId(currentUserId);
-                            newAlert.setKeywordUsed(finalDetectedKeyword);
-                            newAlert.setLatitude(lat);
-                            newAlert.setLongitude(lon);
-                            newAlert.setMapLink(finalMapLink); // تخزين الرابط المرمز
-
-                            alertLogDao.open();
-                            long logId = alertLogDao.addAlertLog(newAlert);
-                            alertLogDao.close();
-
-                            if (logId != -1) {
-                                Log.i(TAG, "Alert successfully logged with ID: " + logId);
-                                mainThreadHandler.post(() -> updateNotification("تم إرسال التنبيه وتسجيل البلاغ."));
-                            } else {
-                                Log.e(TAG, "Failed to log alert to database.");
-                                mainThreadHandler.post(() -> updateNotification("تم إرسال التنبيه، لكن فشل تسجيل البلاغ."));
-                            }
+                        if (location != null) {
+                            lat = location.getLatitude();
+                            lon = location.getLongitude();
+                            mapLink = "http://maps.google.com/maps?q=" + lat + "%2C" + lon;
+                            locationStringForPhp = String.format(Locale.US, "%.6f,%.6f", lat, lon);
+                        } else {
+                            Log.w(TAG, "Location is null for the alert.");
                         }
+
+                        final String smsMessageText = String.format(Locale.getDefault(),
+                                "لقد استعمل %s %s الكلمة المفتاحية (%s) في الموقع الجغرافي على الخريطة (%s)",
+                                userHolder[0].getFirstName(), userHolder[0].getLastName(), finalDetectedKeyword, mapLink);
+
+                        for (EmergencyNumber number : recipientNumbersHolder) {
+                            sendActionMessage(number.getPhoneNumber(), smsMessageText);
+                        }
+
+                        sendHttpPostRequest(userHolder[0], finalDetectedKeyword, lat, lon, userHolder[0].getResidenceArea(), locationStringForPhp, mapLink);
+
+                        AlertLog newAlert = new AlertLog();
+                        newAlert.setUserId(currentUserId);
+                        newAlert.setKeywordUsed(finalDetectedKeyword);
+                        newAlert.setLatitude(lat);
+                        newAlert.setLongitude(lon);
+                        newAlert.setMapLink(mapLink);
+
+                        alertLogDao.open();
+                        long logId = alertLogDao.addAlertLog(newAlert);
+                        alertLogDao.close();
+
+                        if (logId != -1) {
+                            Log.i(TAG, "Alert successfully logged with ID: " + logId);
+                            mainThreadHandler.post(() -> updateNotification("تم إرسال التنبيه وتسجيل البلاغ."));
+                        } else {
+                            Log.e(TAG, "Failed to log alert to database.");
+                            mainThreadHandler.post(() -> updateNotification("تم إرسال التنبيه، لكن فشل تسجيل البلاغ."));
+                        }
+
+                        resumeListeningAfterAction(); // استئناف الاستماع بعد إكمال جميع المهام
                     })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.e(TAG, "Failed to get location for alert: " + e.getMessage(), e);
-                            mainThreadHandler.post(() -> updateNotification("خطأ في تحديد الموقع. لم يتم إرسال التنبيه."));
-                        }
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Failed to get location for alert: " + e.getMessage(), e);
+                        mainThreadHandler.post(() -> updateNotification("خطأ في تحديد الموقع. لم يتم إرسال التنبيه."));
+                        resumeListeningAfterAction(); // استئناف الاستماع حتى لو فشل تحديد الموقع
                     });
         });
+    }
+
+    /**
+     * يستأنف حلقة الاستماع بعد انتهاء معالجة البلاغ.
+     */
+    private void resumeListeningAfterAction() {
+        isActionInProgress = false;
+        Log.d(TAG, "Action finished. Resuming listening loop.");
+        restartListeningAfterDelay(2000); // تأخير بسيط قبل الاستماع مرة أخرى
     }
 
     // --- 7. إرسال رسالة SMS ---
@@ -596,5 +589,77 @@ public class SpeechRecognizerService extends Service {
             Log.e(TAG, "sendActionMessage: Failed to send SMS to " + recipientPhoneNumber + ": " + e.getMessage(), e);
             mainThreadHandler.post(() -> Toast.makeText(getApplicationContext(), "فشل إرسال الرسالة إلى " + recipientPhoneNumber + ": " + e.getMessage(), Toast.LENGTH_LONG).show());
         }
+    }
+
+    // --- 8. إرسال طلب HTTP POST ---
+    private void sendHttpPostRequest(User user, String keyword, double latitude, double longitude, String residenceArea, String locationStringForPhp, String mapLink) {
+        executeTask(() -> {
+            HttpURLConnection urlConnection = null;
+            try {
+                URL url = new URL(PHP_RECEIVER_URL);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setDoOutput(true);
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setReadTimeout(10000);
+
+                StringBuilder postData = new StringBuilder();
+                postData.append(URLEncoder.encode("firstName", StandardCharsets.UTF_8.toString())).append("=").append(URLEncoder.encode(user.getFirstName(), StandardCharsets.UTF_8.toString()));
+                postData.append("&").append(URLEncoder.encode("lastName", StandardCharsets.UTF_8.toString())).append("=").append(URLEncoder.encode(user.getLastName(), StandardCharsets.UTF_8.toString()));
+                postData.append("&").append(URLEncoder.encode("phoneNumber", StandardCharsets.UTF_8.toString())).append("=").append(URLEncoder.encode(user.getPhoneNumber(), StandardCharsets.UTF_8.toString()));
+                postData.append("&").append(URLEncoder.encode("residenceArea", StandardCharsets.UTF_8.toString())).append("=").append(URLEncoder.encode(residenceArea, StandardCharsets.UTF_8.toString()));
+                postData.append("&").append(URLEncoder.encode("keywordUsed", StandardCharsets.UTF_8.toString())).append("=").append(URLEncoder.encode(keyword, StandardCharsets.UTF_8.toString()));
+                postData.append("&").append(URLEncoder.encode("latitude", StandardCharsets.UTF_8.toString())).append("=").append(URLEncoder.encode(String.valueOf(latitude), StandardCharsets.UTF_8.toString()));
+                postData.append("&").append(URLEncoder.encode("longitude", StandardCharsets.UTF_8.toString())).append("=").append(URLEncoder.encode(String.valueOf(longitude), StandardCharsets.UTF_8.toString()));
+                postData.append("&").append(URLEncoder.encode("mapLink", StandardCharsets.UTF_8.toString())).append("=").append(URLEncoder.encode(mapLink, StandardCharsets.UTF_8.toString()));
+
+                OutputStream os = urlConnection.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
+                writer.write(postData.toString());
+                writer.flush();
+                writer.close();
+                os.close();
+
+                int responseCode = urlConnection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), StandardCharsets.UTF_8));
+                    String inputLine;
+                    StringBuilder response = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    in.close();
+                    Log.i(TAG, "HTTP POST Success. Server Response: " + response.toString());
+                    mainThreadHandler.post(() -> Toast.makeText(getApplicationContext(), "تم إرسال البلاغ للخادم بنجاح.", Toast.LENGTH_SHORT).show());
+                } else {
+                    Log.e(TAG, "HTTP POST Failed. Response Code: " + responseCode);
+                    mainThreadHandler.post(() -> Toast.makeText(getApplicationContext(), "فشل إرسال البلاغ للخادم. كود: " + responseCode, Toast.LENGTH_LONG).show());
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "HTTP POST Error: " + e.getMessage(), e);
+                mainThreadHandler.post(() -> Toast.makeText(getApplicationContext(), "خطأ في الاتصال بالخادم: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            } finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+            }
+        });
+    }
+
+    // دالة مساعدة لتنفيذ المهام على ExecutorService بأمان
+    private void executeTask(Runnable task) {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.execute(task);
+        } else {
+            Log.e(TAG, "executeTask: ExecutorService is not available, task rejected.");
+        }
+    }
+
+    // دالة مساعدة لإرسال بث محلي للواجهة الأمامية
+    private void sendBroadcastToActivity(String action, String message) {
+        Intent intent = new Intent(action);
+        intent.putExtra("recognized_text", message);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 }

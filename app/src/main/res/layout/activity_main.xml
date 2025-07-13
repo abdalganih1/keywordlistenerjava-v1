@@ -17,7 +17,7 @@
         android:textStyle="bold"
         android:layout_marginBottom="24dp"/>
 
-    <!-- قسم الإحصائيات (مخفي عن المستخدم العادي، لكن هنا للعرض) -->
+    <!-- قسم الإحصائيات -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -41,13 +41,15 @@
             android:text="عدد البلاغات الإجمالي: 0"
             android:textSize="16sp"/>
 
+        <!-- هذه TextViews مخفية عن المستخدم العادي -->
         <TextView
             android:id="@+id/tv_real_alerts"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="عدد البلاغات الحقيقية: 0"
             android:textSize="16sp"
-            android:textColor="@android:color/holo_green_dark"/>
+            android:textColor="@android:color/holo_green_dark"
+            android:visibility="gone"/>
 
         <TextView
             android:id="@+id/tv_false_alerts"
@@ -55,29 +57,39 @@
             android:layout_height="wrap_content"
             android:text="عدد البلاغات الكاذبة: 0"
             android:textSize="16sp"
-            android:textColor="@android:color/holo_red_dark"/>
+            android:textColor="@android:color/holo_red_dark"
+            android:visibility="gone"/>
     </LinearLayout>
 
-    <Button
-        android:id="@+id/btn_start_porcupine"     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:text="تشغيل الاستماع (يصدر صوتًا)"
-        android:padding="12dp"
-    android:layout_marginBottom="12dp"/>
-
-    <Button
-        android:id="@+id/btn_stop_porcupine"
-        android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:text="إيقاف الاستماع"
-    android:padding="12dp"
-    android:layout_marginBottom="24dp"/>
-
+    <!-- *** TextView لعرض النص المكتشف (للتصحيح والاختبار) *** -->
     <TextView
         android:id="@+id/tv_recognized_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="" />
+        android:text="النص المكتشف: لا شيء بعد."
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"
+        android:padding="8dp"
+        android:background="@drawable/rounded_edittext_background"/>
+
+
+    <Button
+        android:id="@+id/btn_start_porcupine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="تشغيل الاستماع (يصدر صوتًا)"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btn_stop_porcupine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="إيقاف الاستماع"
+        android:padding="12dp"
+        android:layout_marginBottom="24dp"/>
 
     <Button
         android:id="@+id/btn_view_log"

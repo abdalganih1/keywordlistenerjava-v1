@@ -117,6 +117,34 @@ public class KeywordDao {
     }
 
     /**
+     * Retrieves a specific keyword for a specific user.
+     * @param keywordText The text of the keyword.
+     * @param userId The ID of the user.
+     * @return A Keyword object if found for the user, otherwise null.
+     */
+    public Keyword getKeywordByTextAndUser(String keywordText, int userId) {
+        Cursor cursor = null;
+        Keyword keyword = null;
+        try {
+            cursor = db.query(
+                    DatabaseHelper.TABLE_KEYWORDS,
+                    allColumns,
+                    DatabaseHelper.COLUMN_KEYWORD_TEXT + " = ? AND " + DatabaseHelper.COLUMN_COMMON_USER_ID + " = ?",
+                    new String[]{keywordText, String.valueOf(userId)},
+                    null, null, null
+            );
+            if (cursor != null && cursor.moveToFirst()) {
+                keyword = cursorToKeyword(cursor);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting keyword by text for user: " + keywordText, e);
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+        return keyword;
+    }
+
+    /**
      * Retrieves all keywords associated with a specific user (including default ones if linked).
      * For now, this only retrieves keywords that have the user_id assigned.
      * To get all keywords a user *can* use (user-specific + default system-wide),
@@ -187,6 +215,69 @@ public class KeywordDao {
                 DatabaseHelper.COLUMN_KEYWORD_ID + " = ?",
                 new String[]{String.valueOf(keywordId)}
         );
+    }
+
+    /**
+     * Updates an existing custom keyword for a specific user.
+     * @param keywordId The ID of the keyword to update.
+     * @param newKeywordText The new text for the keyword.
+     * @param userId The ID of the user who owns this keyword.
+     * @return The number of rows affected (should be 1 if successful).
+     */
+    public int updateCustomKeyword(int keywordId, String newKeywordText, int userId) {
+        ContentValues values = new ContentValues();
+        values.put(DatabaseHelper.COLUMN_KEYWORD_TEXT, newKeywordText);
+
+        return db.update(
+                DatabaseHelper.TABLE_KEYWORDS,
+                values,
+                DatabaseHelper.COLUMN_KEYWORD_ID + " = ? AND " + DatabaseHelper.COLUMN_COMMON_USER_ID + " = ?",
+                new String[]{String.valueOf(keywordId), String.valueOf(userId)}
+        );
+    }
+
+    /**
+     * Deletes a custom keyword by its ID, ensuring it belongs to the user.
+     * @param keywordId The ID of the keyword to delete.
+     * @param userId The ID of the user who owns this keyword.
+     * @return The number of rows affected (should be 1 if successful).
+     */
+    public int deleteCustomKeyword(int keywordId, int userId) {
+        // ON DELETE CASCADE in the database will automatically delete related links in KeywordNumberLinks table.
+        return db.delete(
+                DatabaseHelper.TABLE_KEYWORDS,
+                DatabaseHelper.COLUMN_KEYWORD_ID + " = ? AND " + DatabaseHelper.COLUMN_COMMON_USER_ID + " = ?",
+                new String[]{String.valueOf(keywordId), String.valueOf(userId)}
+        );
+    }
+
+    /**
+     * Retrieves only the custom keywords created by a specific user.
+     * @param userId The ID of the user.
+     * @return A list of custom Keyword objects.
+     */
+    public List<Keyword> getCustomKeywordsForUser(int userId) {
+        List<Keyword> keywords = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = db.query(
+                    DatabaseHelper.TABLE_KEYWORDS,
+                    allColumns,
+                    DatabaseHelper.COLUMN_COMMON_USER_ID + " = ? AND " + DatabaseHelper.COLUMN_KEYWORD_IS_DEFAULT + " = 0",
+                    new String[]{String.valueOf(userId)},
+                    null, null, null
+            );
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                keywords.add(cursorToKeyword(cursor));
+                cursor.moveToNext();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting custom keywords for user: " + userId, e);
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+        return keywords;
     }
 
     // Helper method to convert Cursor to Keyword object

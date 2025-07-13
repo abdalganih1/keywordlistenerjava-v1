@@ -1,10 +1,8 @@
 package com.example.keywordlistenerjava.adapter;
 
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -14,19 +12,18 @@ import com.example.keywordlistenerjava.R;
 import com.example.keywordlistenerjava.db.entity.AlertLog;
 
 import java.util.List;
+import java.util.Locale;
 
 public class AlertLogAdapter extends RecyclerView.Adapter<AlertLogAdapter.AlertLogViewHolder> {
 
     private List<AlertLog> alertLogs;
-    private OnItemActionListener listener;
+    private OnItemClickListener listener;
 
-    public interface OnItemActionListener {
+    public interface OnItemClickListener {
         void onMapLinkClick(String mapLink);
-        void onMarkAsRealClick(int logId);
-        void onMarkAsFalseClick(int logId);
     }
 
-    public AlertLogAdapter(List<AlertLog> alertLogs, OnItemActionListener listener) {
+    public AlertLogAdapter(List<AlertLog> alertLogs, OnItemClickListener listener) {
         this.alertLogs = alertLogs;
         this.listener = listener;
     }
@@ -45,36 +42,28 @@ public class AlertLogAdapter extends RecyclerView.Adapter<AlertLogAdapter.AlertL
         holder.tvLogId.setText("رقم الحالة: " + alert.getLogId());
         holder.tvKeywordUsed.setText("الكلمة المفتاحية: " + alert.getKeywordUsed());
         holder.tvDateTime.setText("التاريخ والوقت: " + alert.getAlertDate() + " " + alert.getAlertTime());
-        holder.tvLocation.setText("الموقع: " + String.format("%.6f, %.6f", alert.getLatitude(), alert.getLongitude()));
+        holder.tvLocation.setText("الموقع: " + String.format(Locale.US, "%.6f, %.6f", alert.getLatitude(), alert.getLongitude()));
 
-        String statusText;
-        if (alert.getIsFalseAlarm() == null) {
-            statusText = "الحالة: قيد التقييم";
-            holder.tvStatus.setTextColor(Color.GRAY);
-        } else if (alert.getIsFalseAlarm()) {
-            statusText = "الحالة: بلاغ كاذب";
-            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.holo_red_dark));
-        } else {
-            statusText = "الحالة: بلاغ حقيقي";
-            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.holo_green_dark));
-        }
-        holder.tvStatus.setText(statusText);
+        // *** إخفاء TextView الخاص بالحالة ***
+        holder.tvStatus.setVisibility(View.GONE); // اجعله مخفياً بالكامل
+        // أو يمكنك فقط إزالة تعيين النص:
+        // holder.tvStatus.setText(""); // إذا أردت إبقاءه مرئياً ولكن فارغاً
+        // String statusText;
+        // if (alert.getIsFalseAlarm() == null) {
+        //     statusText = "الحالة: قيد التقييم";
+        // } else if (alert.getIsFalseAlarm()) {
+        //     statusText = "الحالة: بلاغ كاذب";
+        //     holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.holo_red_dark));
+        // } else {
+        //     statusText = "الحالة: بلاغ حقيقي";
+        //     holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.holo_green_dark));
+        // }
+        // holder.tvStatus.setText(statusText);
+
 
         holder.tvLocation.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onMapLinkClick(alert.getMapLink());
-            }
-        });
-
-        holder.btnMarkAsReal.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onMarkAsRealClick(alert.getLogId());
-            }
-        });
-
-        holder.btnMarkAsFalse.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onMarkAsFalseClick(alert.getLogId());
             }
         });
     }
@@ -86,7 +75,6 @@ public class AlertLogAdapter extends RecyclerView.Adapter<AlertLogAdapter.AlertL
 
     static class AlertLogViewHolder extends RecyclerView.ViewHolder {
         TextView tvLogId, tvKeywordUsed, tvDateTime, tvLocation, tvStatus;
-        Button btnMarkAsReal, btnMarkAsFalse;
 
         public AlertLogViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -95,8 +83,6 @@ public class AlertLogAdapter extends RecyclerView.Adapter<AlertLogAdapter.AlertL
             tvDateTime = itemView.findViewById(R.id.tv_alert_date_time);
             tvLocation = itemView.findViewById(R.id.tv_alert_location);
             tvStatus = itemView.findViewById(R.id.tv_alert_status);
-            btnMarkAsReal = itemView.findViewById(R.id.btn_mark_as_real);
-            btnMarkAsFalse = itemView.findViewById(R.id.btn_mark_as_false);
         }
     }
 }

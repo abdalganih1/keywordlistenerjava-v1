@@ -22,7 +22,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Database Info
     private static final String DATABASE_NAME = "SecurityApp.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     // Table Names
     public static final String TABLE_USERS = "Users";
@@ -95,22 +95,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String CREATE_TABLE_KEYWORDS = "CREATE TABLE " + TABLE_KEYWORDS + " (" +
             COLUMN_KEYWORD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            COLUMN_KEYWORD_TEXT + " TEXT NOT NULL UNIQUE, " + // UNIQUE to prevent duplicate keywords system-wide
-            COLUMN_COMMON_USER_ID + " INTEGER, " + // هذا هو عمود user_id في جدول Keywords
+            COLUMN_KEYWORD_TEXT + " TEXT NOT NULL, " + // *** تم إزالة قيد UNIQUE من هنا ***
+            COLUMN_COMMON_USER_ID + " INTEGER, " +
             COLUMN_KEYWORD_PPN_FILE + " TEXT, " +
             COLUMN_KEYWORD_IS_DEFAULT + " INTEGER DEFAULT 0 NOT NULL, " +
             COLUMN_KEYWORD_ADDED_DATE + " TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S','now','localtime')), " +
-            "FOREIGN KEY(" + COLUMN_COMMON_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ") ON DELETE CASCADE" +
+            "FOREIGN KEY(" + COLUMN_COMMON_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ") ON DELETE CASCADE," +
+            // *** إضافة قيد UNIQUE جديد: الكلمة يجب أن تكون فريدة للمستخدم الواحد (أو افتراضية) ***
+            "UNIQUE (" + COLUMN_KEYWORD_TEXT + ", " + COLUMN_COMMON_USER_ID + ")" +
             ");";
 
     private static final String CREATE_TABLE_EMERGENCY_NUMBERS = "CREATE TABLE " + TABLE_EMERGENCY_NUMBERS + " (" +
             COLUMN_NUMBER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            COLUMN_NUMBER_PHONE + " TEXT NOT NULL UNIQUE, " + // UNIQUE to prevent duplicate numbers system-wide
+            COLUMN_NUMBER_PHONE + " TEXT NOT NULL, " + // *** تم إزالة قيد UNIQUE من هنا ***
             COLUMN_NUMBER_DESC + " TEXT NOT NULL, " +
-            COLUMN_COMMON_USER_ID + " INTEGER, " + // هذا هو عمود user_id في جدول EmergencyNumbers
+            COLUMN_COMMON_USER_ID + " INTEGER, " +
             COLUMN_NUMBER_IS_DEFAULT + " INTEGER DEFAULT 0 NOT NULL, " +
             COLUMN_NUMBER_ADDED_DATE + " TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S','now','localtime')), " +
-            "FOREIGN KEY(" + COLUMN_COMMON_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ") ON DELETE CASCADE" +
+            "FOREIGN KEY(" + COLUMN_COMMON_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ") ON DELETE CASCADE," +
+             // *** إضافة قيد UNIQUE جديد: الرقم يجب أن يكون فريدًا للمستخدم الواحد (أو افتراضي) ***
+            "UNIQUE (" + COLUMN_NUMBER_PHONE + ", " + COLUMN_COMMON_USER_ID + ")" +
             ");";
 
     private static final String CREATE_TABLE_KEYWORD_NUMBER_LINKS = "CREATE TABLE " + TABLE_KEYWORD_NUMBER_LINKS + " (" +

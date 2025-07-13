@@ -57,32 +57,8 @@
             android:layout_marginTop="8dp"
             android:text="الحالة: قيد التقييم"
             android:textSize="16sp"
-            android:textStyle="bold"/>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="16dp">
-
-            <Button
-                android:id="@+id/btn_mark_as_real"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="بلاغ حقيقي"
-                android:backgroundTint="@android:color/holo_green_dark"
-                android:layout_marginEnd="8dp"/>
-
-            <Button
-                android:id="@+id/btn_mark_as_false"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="بلاغ كاذب"
-                android:backgroundTint="@android:color/holo_red_dark"
-                android:layout_marginStart="8dp"/>
-        </LinearLayout>
+            android:textStyle="bold"
+            android:visibility="gone"/> <!-- *** تم الإخفاء هنا *** -->
 
     </LinearLayout>
 
